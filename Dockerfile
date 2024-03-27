@@ -15,7 +15,7 @@ COPY . /app
 RUN pip install --no-cache-dir fastapi uvicorn pydantic tinderpy tinder-token
 
 # Expose port 8000 to the outside world
-EXPOSE 8000
+EXPOSE 8080
 
 # Run the FastAPI application with Uvicorn
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
