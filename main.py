@@ -73,5 +73,5 @@ async def swipe_routine(min_age: int, max_age: int, count: int):
     global_client_instance.swipe_routine(min_age, max_age, count)
     return {"message": "Swipe routine completed"}
 
-if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+#if __name__ == "__main__":
+    # uvicorn.run(app, host="0.0.0.0", port=8000)
