@@ -37,7 +37,7 @@ class AuthToken:
         return self.phone.get_tinder_token(refresh_token)
 
 
-@app.post("/send_otp/")
+@app.post("/send_otp")
 async def send_otp(phone_number: str):
     global global_phone_number
     auth = AuthToken()
@@ -49,7 +49,7 @@ async def send_otp(phone_number: str):
     else:
         raise HTTPException(status_code=500, detail="Failed to send OTP")
 
-@app.post("/auth/")
+@app.post("/auth")
 async def authenticate_and_store_client(otp_code):
     global global_client_instance
     if global_phone_number is None:
@@ -64,14 +64,14 @@ async def authenticate_and_store_client(otp_code):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.post("/update_bio/")
+@app.post("/update_bio")
 async def update_bio(new_bio: str):
     if global_client_instance is None:
         raise HTTPException(status_code=400, detail="Client not authenticated")
     global_client_instance.update_bio(new_bio)
     return {"message": "Bio updated successfully"}
 
-@app.post("/swipe_routine/")
+@app.post("/swipe_routine")
 async def swipe_routine(min_age: int, max_age: int, count: int):
     if global_client_instance is None:
         raise HTTPException(status_code=400, detail="Client not authenticated")
