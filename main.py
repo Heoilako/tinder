@@ -37,7 +37,7 @@ class AuthToken:
         return self.phone.get_tinder_token(refresh_token)
 
 
-
+@app.head("/send_otp/")
 @app.post("/send_otp/")
 async def send_otp(phone_number: str):
     global global_phone_number
