@@ -1,7 +1,6 @@
 import logging
 import asyncio
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
 from tinder import TinderClient
 from tinder_token.phone import TinderTokenPhoneV2
 from fastapi.middleware.cors import CORSMiddleware
