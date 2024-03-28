@@ -1,17 +1,26 @@
+import logging
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from tinder import TinderClient
 from tinder_token.phone import TinderTokenPhoneV2
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
+
+
 app = FastAPI()
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],
-#     allow_credentials=False,
-#     allow_methods=["GET", "POST", "PUT", "DELETE"],
-#     allow_headers=["*"],
-# )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["POST"],
+    allow_headers=["*"],
+)
+
+
+# Configure logging
+logging.basicConfig(filename='app.log', level=logging.INFO)
+
 # Placeholder for storing the phone number after the OTP is sent
 global_phone_number = None
 
@@ -25,9 +34,11 @@ class AuthToken:
     def send_otp(self, phone_number: str):
         # Attempt to send an OTP code to the phone number
         try:
-            return self.phone.send_otp_code(phone_number)
+            sent_otp = self.phone.send_otp_code(phone_number)
+            logging.info(f"OTP sent successfully to {phone_number}")
+            return sent_otp
         except Exception as e:
-            print(e)  # Ideally, log the error
+            logging.error(f"Failed to send OTP to {phone_number}: {e}")
             return False
     
     def get_auth_token(self, otp_code: str) -> str:
@@ -41,18 +52,20 @@ class AuthToken:
 async def send_otp(phone_number: str):
     global global_phone_number
     auth = AuthToken()
-    sent_otp=auth.send_otp(phone_number)
+    sent_otp = auth.send_otp(phone_number)
     if sent_otp:
         # Store the phone number globally after successfully sending OTP
         global_phone_number = phone_number
-        return {"message": "OTP sent successfully "+str(sent_otp)}
+        return {"message": "OTP sent successfully " + str(sent_otp)}
     else:
+        logging.error("Failed to send OTP")
         raise HTTPException(status_code=500, detail="Failed to send OTP")
 
 @app.post("/auth")
 async def authenticate_and_store_client(otp_code):
     global global_client_instance
     if global_phone_number is None:
+        logging.error("Phone number not found. Please send OTP first.")
         raise HTTPException(status_code=400, detail="Phone number not found. Please send OTP first.")
     
     auth = AuthToken()
@@ -62,11 +75,13 @@ async def authenticate_and_store_client(otp_code):
         global_client_instance = TinderClient(auth_token)
         return {"message": "Authentication successful and client stored"}
     except Exception as e:
+        logging.error(f"Authentication failed: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/update_bio")
 async def update_bio(new_bio: str):
     if global_client_instance is None:
+        logging.error("Client not authenticated")
         raise HTTPException(status_code=400, detail="Client not authenticated")
     global_client_instance.update_bio(new_bio)
     return {"message": "Bio updated successfully"}
@@ -74,6 +89,7 @@ async def update_bio(new_bio: str):
 @app.post("/swipe_routine")
 async def swipe_routine(min_age: int, max_age: int, count: int):
     if global_client_instance is None:
+        logging.error("Client not authenticated")
         raise HTTPException(status_code=400, detail="Client not authenticated")
     global_client_instance.swipe_routine(min_age, max_age, count)
     return {"message": "Swipe routine completed"}
