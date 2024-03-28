@@ -39,7 +39,7 @@ class AuthToken:
 
 @app.head("/send_otp/")
 @app.post("/send_otp/")
-async def send_otp(phone_number: str):
+def send_otp(phone_number: str):
     global global_phone_number
     auth = AuthToken()
     sent_otp=auth.send_otp(phone_number)
