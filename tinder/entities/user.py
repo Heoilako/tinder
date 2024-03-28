@@ -226,7 +226,8 @@ class SelfUser(GenericUser):
         self.position_info: PositionInfo = PositionInfo(user["pos_info"])
         if "schools" in user:
             self.school: School = School(user["schools"][0])
-        self.show_gender_on_profile: bool = user["show_gender_on_profile"]
+        if 'show_gender_on_profile' in user:
+            self.show_gender_on_profile: bool = user["show_gender_on_profile"]
         self.can_create_squad: bool = user["can_create_squad"]
 
     def update_interests(self, interests: Union[List[Interest], None]):
