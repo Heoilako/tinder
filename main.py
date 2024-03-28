@@ -5,13 +5,13 @@ from tinder_token.phone import TinderTokenPhoneV2
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
-    allow_headers=["*"],
-)
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["*"],
+#     allow_credentials=False,
+#     allow_methods=["GET", "POST", "PUT", "DELETE"],
+#     allow_headers=["*"],
+# )
 # Placeholder for storing the phone number after the OTP is sent
 global_phone_number = None
 
