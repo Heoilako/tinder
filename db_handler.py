@@ -36,6 +36,12 @@ class DatabaseHandler:
             c.execute("SELECT auth_token FROM auth_tokens")
             return c.fetchall()
 
+    def remove_token(self, auth_token: str):
+        """Remove a specific auth token from the database."""
+        with self.connect() as conn:
+            c = conn.cursor()
+            c.execute("DELETE FROM auth_tokens WHERE auth_token = ?", (auth_token,))
+            conn.commit()
 
 
 # # To insert tokens

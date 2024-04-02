@@ -142,6 +142,12 @@ async def get_auth_tokens():
     return {"tokens": db_handler.fetch_all_tokens()}
 
 
+@app.get("/remove_auth_token")
+async def remove_auth_token(auth_token):
+    db_handler.remove_token(auth_token)
+    return {"tokens": db_handler.fetch_all_tokens()}
+
+
 # Custom exception handler
 @app.exception_handler(Exception)
 async def exception_handler(request, exc):
