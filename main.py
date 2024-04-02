@@ -5,6 +5,9 @@ from tinder import TinderClient
 from tinder_token.phone import TinderTokenPhoneV2
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi import UploadFile, File
+import pandas as pd
+from db_handler import DatabaseHandler
 
 # Initialize FastAPI app
 app = FastAPI(title='Tinder API',description='This API Provides access to tinder services',debug=True)
@@ -20,6 +23,33 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
+
+# Usage example
+db_handler = DatabaseHandler('tinder_tokens.db')
+db_handler.create_table()  # Create the table
+
+
+@app.post("/upload_tokens")
+async def upload_tokens(file: UploadFile = File(...)):
+    if file.content_type != 'text/csv':
+        raise HTTPException(status_code=400, detail="Invalid file type. Please upload a CSV file.")
+    
+    try:
+        # Read CSV file content into a DataFrame
+        df = pd.read_csv(file.file)
+        
+        # Verify that 'auth_token' column exists
+        if 'auth_token' not in df.columns:
+            raise HTTPException(status_code=400, detail="CSV file must contain 'auth_token' column.")
+        
+        # Insert tokens into the database
+        db_handler.insert_tokens(df['auth_token'].tolist())
+        
+        return {"message": "Auth tokens uploaded successfully."}
+    except Exception as e:
+        logging.error(f"Failed to upload auth tokens: {e}")
+        raise HTTPException(status_code=500, detail="Failed to upload auth tokens")
+
 
 async def send_otp_func(phone_number: str):
     # Attempt to send an OTP code to the phone number
