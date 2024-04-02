@@ -117,7 +117,7 @@ async def get_user_bio(auth_token: str):
     try:
         # Call the get_user_bio method to fetch the user's bio
         user = client_instance.get_self_user()
-
+        print(user)
         # Return the user's bio in the response
         return {"bio": user}
     except Exception as e:
