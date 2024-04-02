@@ -134,11 +134,21 @@ async def swipe_routine(start_hour: int, end_hour: int, likes_per_day: int,auth_
     client_instance.swipe_routine(start_hour, end_hour, likes_per_day)
     return {"message": "Swipe routine completed"}
 
+
+
+@app.get("/get_auth_tokens")
+async def get_auth_tokens():
+    
+    return {"tokens": db_handler.fetch_all_tokens()}
+
+
 # Custom exception handler
 @app.exception_handler(Exception)
 async def exception_handler(request, exc):
     logging.error(f"An error occurred: {exc}")
     return JSONResponse(status_code=500, content={"message": "Internal Server Error"})
+
+
 
 # Health check endpoint
 @app.get("/health")
