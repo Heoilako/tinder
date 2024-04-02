@@ -119,7 +119,7 @@ async def get_user_bio(auth_token: str):
         user = client_instance.get_self_user()
         print(user)
         # Return the user's bio in the response
-        return {"bio": user.bio}
+        return {"bio": ''}
     except Exception as e:
         logging.error(f"Failed to fetch user bio: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch user bio")

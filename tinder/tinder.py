@@ -148,7 +148,7 @@ class TinderClient:
 
         if self._self_user is None:
             response = self._http.make_request(method="GET", route="/profile").json()
-            self._self_user = SelfUser(response, self._http)
+            # self._self_user = SelfUser(response, self._http)
        
         return self._self_user
 
