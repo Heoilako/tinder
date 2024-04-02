@@ -197,6 +197,37 @@ class TinderClient:
             logging.error(f"Exception occurred while updating bio: {e}")
             return False
     
+    
+    def get_user_bio(self) -> str:
+        """
+        Retrieves the current bio of the user's profile.
+
+        Returns:
+            str: The current bio text if retrieval was successful, or an empty string otherwise.
+        """
+        try:
+            # Send the request to get the user's profile information.
+            response = self._http.make_request(
+                method="GET",  # Use the GET method to retrieve data.
+                endpoint="/profile"  # The endpoint for getting user profile; adjust if necessary.
+            )
+
+            # Check if the request was successful.
+            if response.status_code == 200:
+                # Extract and return the bio from the response data.
+                bio = response.json().get("bio", "")
+                return bio
+            else:
+                # Log the error if the request was not successful.
+                logging.error(f"Failed to retrieve bio. Status code: {response.status_code}")
+                return ""
+        except Exception as error:
+            # Log any exceptions that occur during the retrieval process.
+            logging.error(f"Exception occurred while retrieving bio: {error}")
+            return ""
+
+    
+    
     def swipe_routine(self, start_hour: int, end_hour: int, likes_per_day: int):
         """
         Executes a routine of swiping likes based on the specified time range and likes per day.

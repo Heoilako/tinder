@@ -49,6 +49,17 @@ async def upload_tokens(file: UploadFile = File(...)):
     except Exception as e:
         logging.error(f"Failed to upload auth tokens: {e}")
         raise HTTPException(status_code=500, detail="Failed to upload auth tokens")
+    
+@app.post("/upload_token")
+async def upload_token(auth_token):
+    try:
+        # Insert tokens into the database
+        db_handler.insert_tokens([auth_token])
+        
+        return {"message": "Auth token uploaded successfully."}
+    except Exception as e:
+        logging.error(f"Failed to upload auth tokens: {e}")
+        raise HTTPException(status_code=500, detail="Failed to upload auth tokens")
 
 
 async def send_otp_func(phone_number: str):
@@ -91,6 +102,27 @@ async def update_bio(new_bio: str,auth_token:str):
         raise HTTPException(status_code=400, detail="Client not authenticated")
     client_instance.update_bio(new_bio)
     return {"message": "Bio updated successfully"}
+
+
+@app.get("/get_user_bio")
+async def get_user_bio(auth_token: str):
+    # Initialize the TinderClient instance with the provided auth_token
+    client_instance = TinderClient(auth_token)
+    
+    if client_instance is None:
+        logging.error("Client not authenticated")
+        raise HTTPException(status_code=400, detail="Client not authenticated")
+
+    try:
+        # Call the get_user_bio method to fetch the user's bio
+        user_bio = client_instance.get_user_bio()
+
+        # Return the user's bio in the response
+        return {"bio": user_bio}
+    except Exception as e:
+        logging.error(f"Failed to fetch user bio: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch user bio")
+
 
 @app.post("/swipe_routine")
 async def swipe_routine(start_hour: int, end_hour: int, likes_per_day: int,auth_token):
