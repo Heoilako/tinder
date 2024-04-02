@@ -105,3 +105,12 @@ class DatabaseHandler:
             group_id = c.fetchone()[0]
             c.execute("INSERT INTO group_members (group_id, auth_token) VALUES (?, ?)", (group_id, auth_token))
             conn.commit()
+
+    def remove_token_from_group(self, auth_token: str, group_name: str):
+        """Add an auth token to a group."""
+        with self.connect() as conn:
+            c = conn.cursor()
+            c.execute("DELETE group_id FROM groups WHERE group_name = ?", (group_name,))
+            group_id = c.fetchone()[0]
+            c.execute("DELETE INTO group_members (group_id, auth_token) VALUES (?, ?)", (group_id, auth_token))
+            conn.commit()

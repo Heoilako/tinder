@@ -146,6 +146,25 @@ async def remove_group(group_name: str):
     except Exception as e:
         logging.error(f"Failed to remove group '{group_name}': {e}")
         raise HTTPException(status_code=500, detail=f"Failed to remove group '{group_name}': {e}")
+    
+@app.post("/add_token_to_group")
+async def add_token_to_group(auth_token:str,group_name: str):
+    try:
+        db_handler.add_token_to_group(group_name)
+        return {"message": f"Group '{group_name}' removed successfully."}
+    except Exception as e:
+        logging.error(f"Failed to Add Token to group '{group_name}': {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to Add Token to group '{group_name}': {e}")
+    
+
+@app.post("/remove_token_from_group")
+async def remove_token_from_group(auth_token:str,group_name: str):
+    try:
+        db_handler.remove_token_from_group(auth_token,group_name)
+        return {"message": f"Group '{group_name}' removed successfully."}
+    except Exception as e:
+        logging.error(f"Failed to remove Token to group '{group_name}': {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to remove Token to group '{group_name}': {e}")
 
 @app.post("/update_group_bio")
 async def update_group_bio(group_name: str, new_bio: str):
@@ -162,6 +181,10 @@ async def update_group_bio(group_name: str, new_bio: str):
 @app.get("/get_auth_tokens")
 async def get_auth_tokens():
     return {"tokens": db_handler.fetch_all_tokens()}
+
+@app.get("/get_group_auth_tokens")
+async def get_group_auth_tokens(group_name:str):
+    return {"tokens": db_handler.fetch_group_tokens(group_name)}
 
 @app.get("/remove_auth_token")
 async def remove_auth_token(auth_token: str):
