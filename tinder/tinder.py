@@ -146,11 +146,11 @@ class TinderClient:
         :return: the self user
         """
 
-        if self._self_user is None:
-            response = self._http.make_request(method="GET", route="/profile").json()
-            return SelfUser(response, self._http)
-        else:
-            return self._self_user
+        
+        response = self._http.make_request(method="GET", route="/profile").json()
+        self._self_user = SelfUser(response, self._http)
+       
+        return self._self_user
 
     def get_liked_users(self) -> Tuple[LikedUser]:
         """
@@ -196,35 +196,6 @@ class TinderClient:
         except Exception as e:
             logging.error(f"Exception occurred while updating bio: {e}")
             return False
-    
-    
-    def get_user_bio(self) -> str:
-        """
-        Retrieves the current bio of the user's profile.
-
-        Returns:
-            str: The current bio text if retrieval was successful, or an empty string otherwise.
-        """
-        try:
-            # Send the request to get the user's profile information.
-            response = self._http.make_request(
-                method="GET",  # Use the GET method to retrieve data.
-                endpoint="/profile"  # The endpoint for getting user profile; adjust if necessary.
-            )
-
-            # Check if the request was successful.
-            if response.status_code == 200:
-                # Extract and return the bio from the response data.
-                bio = response.json().get("bio", "")
-                return bio
-            else:
-                # Log the error if the request was not successful.
-                logging.error(f"Failed to retrieve bio. Status code: {response.status_code}")
-                return ""
-        except Exception as error:
-            # Log any exceptions that occur during the retrieval process.
-            logging.error(f"Exception occurred while retrieving bio: {error}")
-            return ""
 
     
     

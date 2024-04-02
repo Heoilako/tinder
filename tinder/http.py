@@ -56,7 +56,7 @@ class Http:
             self._logger.debug("Continuing...")
 
         url = self._base_url + route
-        print(url)
+       
         self._logger.debug(f"Sending {method} request to {url}")
         if method == "GET":
             response = requests.get(url, headers=self._headers)

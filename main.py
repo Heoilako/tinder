@@ -108,17 +108,17 @@ async def update_bio(new_bio: str,auth_token:str):
 async def get_user_bio(auth_token: str):
     # Initialize the TinderClient instance with the provided auth_token
     client_instance = TinderClient(auth_token)
-    
+    print('client instance created',client_instance)
     if client_instance is None:
         logging.error("Client not authenticated")
         raise HTTPException(status_code=400, detail="Client not authenticated")
 
     try:
         # Call the get_user_bio method to fetch the user's bio
-        user_bio = client_instance.get_user_bio()
+        user = client_instance.get_self_user()
 
         # Return the user's bio in the response
-        return {"bio": user_bio}
+        return {"bio": user}
     except Exception as e:
         logging.error(f"Failed to fetch user bio: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch user bio")
