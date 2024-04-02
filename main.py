@@ -70,7 +70,7 @@ async def upload_tokens(request: Request):
 async def upload_token(auth_token,http_proxy=None,https_proxy=None):
     try:
         # Insert tokens into the database
-        db_handler.insert_tokens([auth_token,http_proxy,https_proxy])
+        db_handler.insert_tokens([(auth_token,http_proxy,https_proxy)])
         
         return {"message": "Auth token uploaded successfully."}
     except Exception as e:
