@@ -29,7 +29,7 @@ class Http:
     _request_count = 0
     _logger = logging.getLogger("tinder-py")
 
-    def __init__(self, token: str, log_level: int, timeout_factor: int = 10):
+    def __init__(self, token: str,proxy_dict:dict, log_level: int, timeout_factor: int = 10):
         self._headers["X-Auth-Token"] = token
         self._max_reattempts = 3
         self._timeout = timeout_factor
@@ -40,6 +40,7 @@ class Http:
                 f"The ratelimit multiplicator is set to {timeout_factor}."
                 "This might result in API spam and banned accounts!"
             )
+        self._proxies = proxy_dict
 
     def make_request(self, **kwargs) -> requests.Response:
         route = kwargs.get("route")
@@ -59,18 +60,18 @@ class Http:
        
         self._logger.debug(f"Sending {method} request to {url}")
         if method == "GET":
-            response = requests.get(url, headers=self._headers)
+            response = requests.get(url, headers=self._headers, proxies=self._proxies)
         elif method == "POST":
-            response = requests.post(url, headers=self._headers, json=body)
+            response = requests.post(url, headers=self._headers, json=body, proxies=self._proxies)
         elif method == "PUT":
-            response = requests.put(url, headers=self._headers, json=body)
+            response = requests.put(url, headers=self._headers, json=body, proxies=self._proxies)
         elif method == "DELETE":
-            response = requests.delete(url, headers=self._headers)
+            response = requests.delete(url, headers=self._headers, proxies=self._proxies)
         else:
             raise ValueError("Invalid request method!")
         status = response.status_code
         self._logger.debug(f"Got response: {status}")
-
+        print('api call respone status : {} {}'.format(status,response))
         if 200 <= status < 300:
             return response
 

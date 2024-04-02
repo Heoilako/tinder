@@ -28,8 +28,20 @@ app.add_middleware(
 
 # Usage example
 db_handler = DatabaseHandler('tinder_tokens.db')
+
+# Global dictionary for storing TinderClient instances keyed by auth token
+client_instances = {}
+
+# Initialize DatabaseHandler with proxy support
+db_handler = DatabaseHandler('tinder_tokens.db')
 db_handler.create_table()  # Create the table
 
+def get_tinder_client(auth_token: str) -> TinderClient:
+    """Fetches or creates a TinderClient instance with proxy settings."""
+    if auth_token not in client_instances:
+        proxy_info = db_handler.fetch_proxy_for_token(auth_token)
+        client_instances[auth_token] = TinderClient(auth_token, proxy_info)
+    return client_instances[auth_token]
 
 @app.post("/upload_tokens")
 async def upload_tokens(request: Request):
@@ -37,29 +49,25 @@ async def upload_tokens(request: Request):
         raise HTTPException(status_code=400, detail="Invalid Content-Type header. Please use 'text/csv'.")
 
     try:
-        # Read the request body as bytes
         body_bytes = await request.body()
-        # Decode bytes to string
         body_str = body_bytes.decode("utf-8")
-        # Convert string to StringIO object
         string_io = StringIO(body_str)
-        
-        # Read CSV content into a DataFrame
         df = pd.read_csv(string_io)
-        
-        # Verify that 'auth_token' column exists
-        if 'auth_token' not in df.columns:
-            raise HTTPException(status_code=400, detail="CSV file must contain 'auth_token' column.")
-        
-        # Insert tokens into the database
-        db_handler.insert_tokens(df['auth_token'].tolist())
-        
-        return {"message": "Auth tokens uploaded successfully."}
+
+        required_columns = ['auth_token', 'http_proxy', 'https_proxy']
+        for column in required_columns:
+            if column not in df.columns:
+                raise HTTPException(status_code=400, detail=f"CSV file must contain '{column}' column.")
+
+        tokens_with_proxies = list(df[['auth_token', 'http_proxy', 'https_proxy']].to_records(index=False))
+        db_handler.insert_tokens(tokens_with_proxies)
+        return {"message": "Auth tokens with proxies uploaded successfully."}
     except Exception as e:
-        logging.error(f"Failed to upload auth tokens: {e}")
-        raise HTTPException(status_code=500, detail="Failed to upload auth tokens")    
+        logging.error(f"Failed to upload auth tokens with proxies: {e}")
+        raise HTTPException(status_code=500, detail="Failed to upload auth tokens with proxies")
+
 @app.post("/upload_token")
-async def upload_token(auth_token):
+async def upload_token(auth_token,http_proxy=None,https_proxy=None):
     try:
         # Insert tokens into the database
         db_handler.insert_tokens([auth_token])
@@ -150,11 +158,12 @@ async def get_auth_tokens():
     
     return {"tokens": db_handler.fetch_all_tokens()}
 
-
 @app.get("/remove_auth_token")
-async def remove_auth_token(auth_token):
+async def remove_auth_token(auth_token: str):
+    # Remove the token from the global instance dictionary as well to ensure consistency
+    client_instances.pop(auth_token, None)
     db_handler.remove_token(auth_token)
-    return {"tokens": db_handler.fetch_all_tokens()}
+    return {"message": "Auth token removed successfully"}
 
 
 # Custom exception handler
