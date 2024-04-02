@@ -146,9 +146,9 @@ class TinderClient:
         :return: the self user
         """
 
-        
-        response = self._http.make_request(method="GET", route="/profile").json()
-        self._self_user = SelfUser(response, self._http)
+        if self._self_user is None:
+            response = self._http.make_request(method="GET", route="/profile").json()
+            self._self_user = SelfUser(response, self._http)
        
         return self._self_user
 

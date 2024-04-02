@@ -101,6 +101,7 @@ async def update_bio(new_bio: str,auth_token:str):
         logging.error("Client not authenticated")
         raise HTTPException(status_code=400, detail="Client not authenticated")
     client_instance.update_bio(new_bio)
+    client_instance.get_self_user()
     return {"message": "Bio updated successfully"}
 
 
