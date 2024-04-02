@@ -8,7 +8,9 @@ from fastapi.responses import JSONResponse
 from fastapi import UploadFile, File
 import pandas as pd
 from db_handler import DatabaseHandler
-
+from fastapi import FastAPI, HTTPException, Request
+import pandas as pd
+from io import StringIO
 # Initialize FastAPI app
 app = FastAPI(title='Tinder API',description='This API Provides access to tinder services',debug=True)
 
@@ -30,13 +32,20 @@ db_handler.create_table()  # Create the table
 
 
 @app.post("/upload_tokens")
-async def upload_tokens(file: UploadFile = File(...)):
-    if file.content_type != 'text/csv':
-        raise HTTPException(status_code=400, detail="Invalid file type. Please upload a CSV file.")
-    
+async def upload_tokens(request: Request):
+    if request.headers.get('content-type') != 'text/csv':
+        raise HTTPException(status_code=400, detail="Invalid Content-Type header. Please use 'text/csv'.")
+
     try:
-        # Read CSV file content into a DataFrame
-        df = pd.read_csv(file.file)
+        # Read the request body as bytes
+        body_bytes = await request.body()
+        # Decode bytes to string
+        body_str = body_bytes.decode("utf-8")
+        # Convert string to StringIO object
+        string_io = StringIO(body_str)
+        
+        # Read CSV content into a DataFrame
+        df = pd.read_csv(string_io)
         
         # Verify that 'auth_token' column exists
         if 'auth_token' not in df.columns:
@@ -48,8 +57,7 @@ async def upload_tokens(file: UploadFile = File(...)):
         return {"message": "Auth tokens uploaded successfully."}
     except Exception as e:
         logging.error(f"Failed to upload auth tokens: {e}")
-        raise HTTPException(status_code=500, detail="Failed to upload auth tokens")
-    
+        raise HTTPException(status_code=500, detail="Failed to upload auth tokens")    
 @app.post("/upload_token")
 async def upload_token(auth_token):
     try:
