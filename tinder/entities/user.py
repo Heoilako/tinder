@@ -229,6 +229,8 @@ class SelfUser(GenericUser):
         if 'show_gender_on_profile' in user:
             self.show_gender_on_profile: bool = user["show_gender_on_profile"]
         self.can_create_squad: bool = user["can_create_squad"]
+        if 'bio' in user:
+            self.bio=user['bio']
 
     def update_interests(self, interests: Union[List[Interest], None]):
         """
