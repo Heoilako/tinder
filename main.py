@@ -1,5 +1,8 @@
+from datetime import datetime
 import logging
 import asyncio
+import random
+import time
 from fastapi import FastAPI, HTTPException, Request, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -118,18 +121,51 @@ async def get_user_bio(auth_token: str):
     except Exception as e:
         logging.error(f"Failed to fetch user bio: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch user bio")
-
 @app.post("/swipe_routine")
 async def swipe_routine(auth_token: str):
-    settings=db_handler.get_swipe_routine_settings()
-    start_hour=settings['start_hour']
-    end_hour=settings['end_hour']
-    likes_per_day=settings['likes_per_day']
-                 
+    settings = db_handler.get_swipe_routine_settings()
+    start_hour = settings['start_hour']
+    end_hour = settings['end_hour']
+    total_swipes = settings['likes_per_day']
+    left_swipe_percentage = settings['left_swipe_percentage']
+
     client_instance = get_tinder_client(auth_token)
+
+    now = datetime.now()
+    start_time = datetime(now.year, now.month, now.day, start_hour)
+    end_time = datetime(now.year, now.month, now.day, end_hour)
+    # Perform right swipe
+    recommendations = client_instance.get_recommendations()
     try:
-        client_instance.swipe_routine(start_hour, end_hour, likes_per_day)
-        return {"message": "Swipe routine completed"}
+        if start_time <= now <= end_time:
+            total_left_swipes = int(total_swipes * (left_swipe_percentage / 100.0))
+            total_right_swipes = total_swipes - total_left_swipes
+            swipes_count = 0
+
+            while swipes_count < total_swipes:
+                if swipes_count < total_left_swipes:
+                    if recommendations:
+                            recommendations[0].dislike()
+                            del recommendations[0]
+                    else:
+                            recommendations = client_instance.get_recommendations()
+                    logging.info("Swiped left")
+                else:
+                    if recommendations:
+                        recommendations[0].like()
+                        del recommendations[0]
+                    else:
+                        recommendations = client_instance.get_recommendations()
+                    
+                    logging.info("Swiped right")
+                swipes_count += 1
+
+                # Random sleep to mimic human behavior
+                time.sleep(random.randint(1, 5))
+
+            return {"message": f"Swipe routine completed with {total_right_swipes} likes and {total_left_swipes} dislikes"}
+        else:
+            return {"message": "Swipe routine not performed, not within the specified time range"}
     except Exception as e:
         logging.error(f"Failed to complete swipe routine: {e}")
         raise HTTPException(status_code=500, detail="Failed to complete swipe routine")
@@ -213,11 +249,10 @@ async def remove_auth_token(auth_token: str):
     return {"message": "Auth token removed successfully"}
 
 
-
 @app.post("/set_swipe_routine_settings")
-async def set_swipe_routine_settings(start_hour: int, end_hour: int, likes_per_day: int):
+async def set_swipe_routine_settings(start_hour: int, end_hour: int, likes_per_day: int, left_swipe_percentage: float):
     try:
-        db_handler.set_swipe_routine_settings(start_hour, end_hour, likes_per_day)
+        db_handler.set_swipe_routine_settings(start_hour, end_hour, likes_per_day, left_swipe_percentage)
         return {"message": "Swipe routine settings updated successfully."}
     except Exception as e:
         logging.error(f"Failed to set swipe routine settings: {e}")
@@ -231,7 +266,6 @@ async def get_swipe_routine_settings():
     except Exception as e:
         logging.error(f"Failed to get swipe routine settings: {e}")
         raise HTTPException(status_code=500, detail="Failed to get swipe routine settings")
-
 
 
 

@@ -38,18 +38,20 @@ class DatabaseHandler:
                     UNIQUE (group_id, auth_token)
                 )
             ''')
+           # Updated swipe_settings table creation with left_swipe_percentage
             c.execute('''
                 CREATE TABLE IF NOT EXISTS swipe_settings (
                     id INTEGER PRIMARY KEY,
                     start_hour INTEGER,
                     end_hour INTEGER,
-                    likes_per_day INTEGER
+                    likes_per_day INTEGER,
+                    left_swipe_percentage REAL DEFAULT 0
                 )
             ''')
             # Ensure there's always one row present for simplicity
             c.execute('''
-                INSERT OR IGNORE INTO swipe_settings (id, start_hour, end_hour, likes_per_day) 
-                VALUES (1, 0, 0, 0)
+                INSERT OR IGNORE INTO swipe_settings (id, start_hour, end_hour, likes_per_day, left_swipe_percentage) 
+                VALUES (1, 0, 0, 0, 0)
             ''')
             conn.commit()
 
@@ -180,31 +182,34 @@ class DatabaseHandler:
             c.execute("SELECT group_name FROM groups")
             return [row[0] for row in c.fetchall()]
         
-    def set_swipe_routine_settings(self, start_hour: int, end_hour: int, likes_per_day: int):
-        """Set global swipe routine settings."""
+    def set_swipe_routine_settings(self, start_hour: int, end_hour: int, likes_per_day: int, left_swipe_percentage: float):
+        """Set global swipe routine settings, including left swipe percentage."""
         with self.connect() as conn:
             c = conn.cursor()
             # Update the single row with new settings
             c.execute('''
                 UPDATE swipe_settings
-                SET start_hour = ?, end_hour = ?, likes_per_day = ?
+                SET start_hour = ?, end_hour = ?, likes_per_day = ?, left_swipe_percentage = ?
                 WHERE id = 1
-            ''', (start_hour, end_hour, likes_per_day))
+            ''', (start_hour, end_hour, likes_per_day, left_swipe_percentage))
             conn.commit()
 
+
     def get_swipe_routine_settings(self) -> Dict[str, int]:
-        """Retrieve global swipe routine settings."""
+        """Retrieve global swipe routine settings, including left swipe percentage."""
         with self.connect() as conn:
             c = conn.cursor()
-            c.execute('SELECT start_hour, end_hour, likes_per_day FROM swipe_settings WHERE id = 1')
+            c.execute('SELECT start_hour, end_hour, likes_per_day, left_swipe_percentage FROM swipe_settings WHERE id = 1')
             settings = c.fetchone()
             if settings:
                 return {
                     'start_hour': settings[0],
                     'end_hour': settings[1],
-                    'likes_per_day': settings[2]
+                    'likes_per_day': settings[2],
+                    'left_swipe_percentage': settings[3]  # Assuming settings[3] is the left_swipe_percentage
                 }
             return {}
+
     def fetch_auth_tokens_by_group(self, group_name: str) -> List[str]:
         """Fetch all auth tokens associated with a specific group."""
         with self.connect() as conn:
