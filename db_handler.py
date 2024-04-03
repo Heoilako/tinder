@@ -114,3 +114,10 @@ class DatabaseHandler:
             group_id = c.fetchone()[0]
             c.execute("DELETE INTO group_members (group_id, auth_token) VALUES (?, ?)", (group_id, auth_token))
             conn.commit()
+            
+    def get_groups(self) -> List[str]:
+        """Get all group names."""
+        with self.connect() as conn:
+            c = conn.cursor()
+            c.execute("SELECT group_name FROM groups")
+            return [row[0] for row in c.fetchall()]

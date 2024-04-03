@@ -147,6 +147,17 @@ async def remove_group(group_name: str):
         logging.error(f"Failed to remove group '{group_name}': {e}")
         raise HTTPException(status_code=500, detail=f"Failed to remove group '{group_name}': {e}")
     
+
+@app.delete("/get_groups")
+async def get_groups():
+    try:
+        response=db_handler.get_groups()
+        return {"groups": response}
+    except Exception as e:
+        logging.error(f"Failed to get groups: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get groups: {e}")
+    
+    
 @app.post("/add_token_to_group")
 async def add_token_to_group(auth_token:str,group_name: str):
     try:
