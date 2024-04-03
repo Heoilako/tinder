@@ -194,6 +194,10 @@ async def update_group_bio(group_name: str, new_bio: str):
         logging.error(f"Failed to update bios for group '{group_name}': {e}")
         raise HTTPException(status_code=500, detail=f"Failed to update bios for group: {e}")
 
+@app.get("/fetch_auth_tokens_by_group")
+async def fetch_auth_tokens_by_group(group_name:str):
+    return {"tokens": db_handler.fetch_auth_tokens_by_group(group_name)}
+
 @app.get("/get_auth_tokens")
 async def get_auth_tokens():
     return {"tokens": db_handler.fetch_all_tokens()}

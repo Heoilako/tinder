@@ -205,3 +205,23 @@ class DatabaseHandler:
                     'likes_per_day': settings[2]
                 }
             return {}
+    def fetch_auth_tokens_by_group(self, group_name: str) -> List[str]:
+        """Fetch all auth tokens associated with a specific group."""
+        with self.connect() as conn:
+            c = conn.cursor()
+
+            # First, find the group_id corresponding to the group_name
+            c.execute("SELECT group_id FROM groups WHERE group_name = ?", (group_name,))
+            group_row = c.fetchone()
+
+            # If the group doesn't exist, return an empty list
+            if group_row is None:
+                return []
+
+            group_id = group_row[0]
+
+            # Fetch all auth tokens associated with the group_id
+            c.execute("SELECT auth_token FROM group_members WHERE group_id = ?", (group_id,))
+            tokens = [row[0] for row in c.fetchall()]
+
+            return tokens
