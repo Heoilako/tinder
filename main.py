@@ -120,7 +120,12 @@ async def get_user_bio(auth_token: str):
         raise HTTPException(status_code=500, detail="Failed to fetch user bio")
 
 @app.post("/swipe_routine")
-async def swipe_routine(start_hour: int, end_hour: int, likes_per_day: int, auth_token: str):
+async def swipe_routine(auth_token: str):
+    settings=db_handler.get_swipe_routine_settings()
+    start_hour=settings['start_hour']
+    end_hour=settings['end_hour']
+    likes_per_day=settings['likes_per_day']
+                 
     client_instance = get_tinder_client(auth_token)
     try:
         client_instance.swipe_routine(start_hour, end_hour, likes_per_day)
@@ -161,7 +166,7 @@ async def get_groups():
 @app.post("/add_token_to_group")
 async def add_token_to_group(auth_token:str,group_name: str):
     try:
-        db_handler.add_token_to_group(group_name)
+        db_handler.add_token_to_group(auth_token,group_name)
         return {"message": f"Group '{group_name}' removed successfully."}
     except Exception as e:
         logging.error(f"Failed to Add Token to group '{group_name}': {e}")
@@ -202,6 +207,29 @@ async def remove_auth_token(auth_token: str):
     client_instances.pop(auth_token, None)  # Remove the client instance if it exists
     db_handler.remove_token(auth_token)  # Remove the token from the database
     return {"message": "Auth token removed successfully"}
+
+
+
+@app.post("/set_swipe_routine_settings")
+async def set_swipe_routine_settings(start_hour: int, end_hour: int, likes_per_day: int):
+    try:
+        db_handler.set_swipe_routine_settings(start_hour, end_hour, likes_per_day)
+        return {"message": "Swipe routine settings updated successfully."}
+    except Exception as e:
+        logging.error(f"Failed to set swipe routine settings: {e}")
+        raise HTTPException(status_code=500, detail="Failed to set swipe routine settings")
+
+@app.get("/get_swipe_routine_settings")
+async def get_swipe_routine_settings():
+    try:
+        settings = db_handler.get_swipe_routine_settings()
+        return {"swipe_routine_settings": settings}
+    except Exception as e:
+        logging.error(f"Failed to get swipe routine settings: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get swipe routine settings")
+
+
+
 
 @app.exception_handler(Exception)
 async def exception_handler(request, exc):

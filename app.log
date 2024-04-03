@@ -3,3 +3,6 @@ ERROR:root:Authentication failed: Expecting value: line 1 column 1 (char 0)
 ERROR:root:Authentication failed: Expecting value: line 1 column 1 (char 0)
 ERROR:root:Authentication failed: Expecting value: line 1 column 1 (char 0)
 ERROR:root:Authentication failed: Expecting value: line 1 column 1 (char 0)
+ERROR:root:Failed to create group 'A': UNIQUE constraint failed: groups.group_name
+ERROR:root:Failed to create group 'A': UNIQUE constraint failed: groups.group_name
+ERROR:root:Failed to Add Token to group 'group b': 'NoneType' object is not subscriptable

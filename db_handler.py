@@ -38,6 +38,19 @@ class DatabaseHandler:
                     UNIQUE (group_id, auth_token)
                 )
             ''')
+            c.execute('''
+                CREATE TABLE IF NOT EXISTS swipe_settings (
+                    id INTEGER PRIMARY KEY,
+                    start_hour INTEGER,
+                    end_hour INTEGER,
+                    likes_per_day INTEGER
+                )
+            ''')
+            # Ensure there's always one row present for simplicity
+            c.execute('''
+                INSERT OR IGNORE INTO swipe_settings (id, start_hour, end_hour, likes_per_day) 
+                VALUES (1, 0, 0, 0)
+            ''')
             conn.commit()
 
     def insert_tokens(self, tokens_with_proxies: List[Tuple[str, str, str]]):
@@ -72,12 +85,21 @@ class DatabaseHandler:
             c.execute("DELETE FROM auth_tokens WHERE auth_token = ?", (auth_token,))
             conn.commit()
 
-    def create_group(self, group_name: str):
-        """Create a new group."""
+    def create_group(self, group_name: str) -> str:
+        """Create a new group if it doesn't already exist."""
         with self.connect() as conn:
             c = conn.cursor()
+            
+            # Check if the group already exists
+            c.execute("SELECT 1 FROM groups WHERE group_name = ?", (group_name,))
+            if c.fetchone():
+                return f"Group '{group_name}' already exists."
+            
+            # Insert the new group since it doesn't exist
             c.execute("INSERT INTO groups (group_name) VALUES (?)", (group_name,))
             conn.commit()
+            return f"Group '{group_name}' created successfully."
+
 
     def remove_group(self, group_name: str):
         """Remove a group and its memberships."""
@@ -97,23 +119,59 @@ class DatabaseHandler:
             ''', (group_name,))
             return [row[0] for row in c.fetchall()]
 
-    def add_token_to_group(self, auth_token: str, group_name: str):
-        """Add an auth token to a group."""
+    def add_token_to_group(self, auth_token: str, group_name: str) -> str:
+        """Add an auth token to a group if the group exists."""
         with self.connect() as conn:
             c = conn.cursor()
+
+            # Check if the group exists
             c.execute("SELECT group_id FROM groups WHERE group_name = ?", (group_name,))
-            group_id = c.fetchone()[0]
+            group_row = c.fetchone()
+
+            if group_row is None:
+                return f"Group '{group_name}' does not exist."
+
+            group_id = group_row[0]
+
+            # Check if the token is already in the group
+            c.execute("SELECT 1 FROM group_members WHERE group_id = ? AND auth_token = ?", (group_id, auth_token))
+            if c.fetchone():
+                return f"Token already in group '{group_name}'."
+
+            # Add the token to the group since the group exists and the token is not already in it
             c.execute("INSERT INTO group_members (group_id, auth_token) VALUES (?, ?)", (group_id, auth_token))
             conn.commit()
+            return f"Token added to group '{group_name}' successfully."
 
-    def remove_token_from_group(self, auth_token: str, group_name: str):
-        """Add an auth token to a group."""
+
+    def remove_token_from_group(self, auth_token: str, group_name: str) -> str:
+        """Remove an auth token from a group if it exists."""
         with self.connect() as conn:
             c = conn.cursor()
-            c.execute("DELETE group_id FROM groups WHERE group_name = ?", (group_name,))
-            group_id = c.fetchone()[0]
-            c.execute("DELETE INTO group_members (group_id, auth_token) VALUES (?, ?)", (group_id, auth_token))
+
+            # First, find the group_id corresponding to the group_name
+            c.execute("SELECT group_id FROM groups WHERE group_name = ?", (group_name,))
+            group_row = c.fetchone()
+
+            # If the group doesn't exist, return a message saying so
+            if group_row is None:
+                return f"Group '{group_name}' does not exist."
+
+            group_id = group_row[0]
+
+            # Check if the token is in the group
+            c.execute("SELECT 1 FROM group_members WHERE group_id = ? AND auth_token = ?", (group_id, auth_token))
+            if c.fetchone() is None:
+                # If the token is not in the group, return a message saying so
+                return f"Token does not exist in group '{group_name}'."
+
+            # If the token is in the group, proceed to delete it
+            c.execute("DELETE FROM group_members WHERE group_id = ? AND auth_token = ?", (group_id, auth_token))
             conn.commit()
+
+            # Return a success message
+            return f"Token successfully removed from group '{group_name}'."
+
             
     def get_groups(self) -> List[str]:
         """Get all group names."""
@@ -121,3 +179,29 @@ class DatabaseHandler:
             c = conn.cursor()
             c.execute("SELECT group_name FROM groups")
             return [row[0] for row in c.fetchall()]
+        
+    def set_swipe_routine_settings(self, start_hour: int, end_hour: int, likes_per_day: int):
+        """Set global swipe routine settings."""
+        with self.connect() as conn:
+            c = conn.cursor()
+            # Update the single row with new settings
+            c.execute('''
+                UPDATE swipe_settings
+                SET start_hour = ?, end_hour = ?, likes_per_day = ?
+                WHERE id = 1
+            ''', (start_hour, end_hour, likes_per_day))
+            conn.commit()
+
+    def get_swipe_routine_settings(self) -> Dict[str, int]:
+        """Retrieve global swipe routine settings."""
+        with self.connect() as conn:
+            c = conn.cursor()
+            c.execute('SELECT start_hour, end_hour, likes_per_day FROM swipe_settings WHERE id = 1')
+            settings = c.fetchone()
+            if settings:
+                return {
+                    'start_hour': settings[0],
+                    'end_hour': settings[1],
+                    'likes_per_day': settings[2]
+                }
+            return {}
