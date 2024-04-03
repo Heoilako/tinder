@@ -148,7 +148,7 @@ async def remove_group(group_name: str):
         raise HTTPException(status_code=500, detail=f"Failed to remove group '{group_name}': {e}")
     
 
-@app.delete("/get_groups")
+@app.get("/get_groups")
 async def get_groups():
     try:
         response=db_handler.get_groups()
