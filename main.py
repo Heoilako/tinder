@@ -2,6 +2,7 @@ from datetime import datetime
 import logging
 import asyncio
 import random
+import threading
 import time
 from fastapi import FastAPI, HTTPException, Request, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
@@ -170,6 +171,23 @@ async def swipe_routine(auth_token: str):
         logging.error(f"Failed to complete swipe routine: {e}")
         raise HTTPException(status_code=500, detail="Failed to complete swipe routine")
 
+
+@app.post('/start_mass_swipe')
+async def start_mass_swipe():
+    swipe_list=[]
+    for token in get_auth_tokens():
+        t=threading.Thread(target=swipe_routine,args=(token[0],))
+        t.start()
+    swipe_list.append(t)
+    
+    for swipe in swipe_list:
+        swipe.join()
+    
+    
+    return {"message": f"Swiping completed"}
+        
+            
+        
 @app.post("/create_group")
 async def create_group(group_name: str):
     try:
